@@ -1,0 +1,19 @@
+package com.example.Exception;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import javax.annotation.security.DenyAll;
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class GlobalException extends RuntimeException{
+    private String message;
+    private String errorCode;
+
+    public GlobalException(String message) {
+        this.message = message;
+    }
+}

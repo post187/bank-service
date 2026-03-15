@@ -23,5 +23,5 @@ public class UserDto {
 
     private Status status;
 
-    private UserProfile userProfile;
+    private UserProfileDto userProfileDto;
 }

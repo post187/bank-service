@@ -1,10 +1,13 @@
 package com.example.Config;
 
+import com.example.Exception.GlobalException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import feign.Response;
 import feign.codec.ErrorDecoder;
+
 import lombok.extern.slf4j.Slf4j;
+import lombok.extern.slf4j.XSlf4j;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,7 +16,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 
-@Slf4j
+
 public class FeignClientErrorDecoder implements ErrorDecoder {
     private static final Logger log = LoggerFactory.getLogger(FeignClientErrorDecoder.class);
 
@@ -30,7 +33,6 @@ public class FeignClientErrorDecoder implements ErrorDecoder {
                 return new Exception();
             }
         }
-        return null;
     }
 
     private GlobalException extractGlobalException(Response response) {
@@ -45,7 +47,7 @@ public class FeignClientErrorDecoder implements ErrorDecoder {
 
             ObjectMapper mapper = new ObjectMapper();
             mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-            globalException = mapper.readValues(result, GlobalException.class);
+            globalException = mapper.readValue(result, GlobalException.class);
             log.error(globalException.toString());
 
         } catch (IOException e) {
