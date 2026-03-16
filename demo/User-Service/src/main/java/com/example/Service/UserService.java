@@ -4,13 +4,14 @@ import com.example.Model.Dto.Internal.CreateUser;
 import com.example.Model.Dto.Internal.UpdateStatus;
 import com.example.Model.Dto.Internal.UpdateUserProfile;
 import com.example.Model.Dto.Internal.UserDto;
+import com.example.Model.Dto.Response.CreateResponse;
 import com.example.Model.Dto.Response.Response;
 
 import java.util.List;
 
 public interface UserService {
 
-    Response createUser(CreateUser userDto);
+    CreateResponse createUser(CreateUser userDto);
 
     List<UserDto> readAllUsers();
 
@@ -25,4 +26,8 @@ public interface UserService {
     UserDto readUserByAccountId(String accountId);
 
     void addAdminRole(Long userId);
+
+    Response verifyToken(String tokenValue);
+
+    Response sendCode(String email);
 }

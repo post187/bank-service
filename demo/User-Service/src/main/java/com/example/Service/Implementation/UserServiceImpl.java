@@ -1,34 +1,38 @@
 package com.example.Service.Implementation;
 
 import com.example.Exception.EmptyFields;
-import com.example.Exception.ResourceConfigException;
+import com.example.Exception.ResourceConflictException;
 import com.example.Exception.ResourceNotFoundException;
 import com.example.External.AccountService;
 import com.example.Model.Dto.Internal.*;
+import com.example.Model.Dto.Response.CreateResponse;
 import com.example.Model.Dto.Response.Response;
 import com.example.Model.Entity.User;
 import com.example.Model.Entity.UserProfile;
+import com.example.Model.Entity.VerificationToken;
 import com.example.Model.External.Account;
 import com.example.Model.Mapper.UserMapper;
 import com.example.Repository.UserRepository;
+import com.example.Repository.VerificationTokenRepository;
 import com.example.Service.KeyCloakService;
 import com.example.Service.UserService;
 import com.example.Utils.FieldChecked;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
-import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.security.SecureRandom;
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -40,8 +44,11 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final AccountService accountService;
     private final KeyCloakService keyCloakService;
+    private final VerificationTokenRepository verificationTokenRepository;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     private UserMapper userMapper = new UserMapper();
+    private ObjectMapper objectMapper = new ObjectMapper();
 
     @Value("${spring.application.success}")
     private String responseCodeSuccess;
@@ -51,12 +58,12 @@ public class UserServiceImpl implements UserService {
 
 
     @Override
-    public Response createUser(CreateUser userDto) {
+    public CreateResponse createUser(CreateUser userDto) {
         List<UserRepresentation> userRepresentations = keyCloakService.readUserByEmail(userDto.getEmail());
 
         if (userRepresentations.size() > 0) {
             log.error("This email is already registered a user");
-            throw new ResourceConfigException("This email is already registered as a user");
+            throw new ResourceConflictException("This email is already registered as a user");
         }
         UserRepresentation userRepresentation = new UserRepresentation();
         userRepresentation.setUsername(userDto.getEmail());
@@ -91,12 +98,73 @@ public class UserServiceImpl implements UserService {
 
             userRepository.save(user);
 
-            return Response.builder()
+            return CreateResponse.builder()
                     .responseCode(responseCodeSuccess)
                     .responseMessage("User created successfully")
+                    .email(user.getEmail())
                     .build();
         }
         throw new RuntimeException("User with identification number not found");
+    }
+
+    @Override
+    public Response sendCode(String email)  {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Email not use with user on the servers"));
+
+        if (user.getStatus() == Status.APPROVED) {
+            throw new ResourceConflictException("Your account verified yet.");
+        }
+
+        generateAndSendVerification(user);
+
+        return Response.builder()
+                .responseMessage("Verification Token sended your email. Please check your email.")
+                .responseCode(responseCodeSuccess)
+                .build();
+    }
+
+    private void generateAndSendVerification(User user) {
+        verificationTokenRepository.deleteByUser(user);
+
+        String token = createToken();
+        VerificationToken verificationToken = VerificationToken
+                .builder()
+                .token(token)
+                .user(user)
+                .expiryDate(LocalDateTime.now().plusMinutes(15))
+                .build();
+        verificationTokenRepository.save(verificationToken);
+
+        kafkaTemplate.send("registration-topic", user.getEmail(), token);
+        log.info("Email send", user.getEmail());
+    }
+
+    private String createToken() {
+        SecureRandom random = new SecureRandom();
+        int otp = new SecureRandom().nextInt(900000) + 100000;
+
+        return String.valueOf(otp);
+    }
+
+    @Override
+    public Response verifyToken(String token) {
+        VerificationToken verification = verificationTokenRepository.findByToken(token)
+                .orElseThrow(() -> new ResourceNotFoundException("Token not found on the servers"));
+
+        if (verification.getExpiryDate().isBefore((LocalDateTime.now()))) {
+            throw new ResourceConflictException("Token is expired");
+        }
+
+        User user = verification.getUser();
+
+        Response response = this.updateUserStatus(user.getUserId(), UpdateStatus.builder()
+                        .status(Status.APPROVED)
+                .build());
+
+        response.setResponseMessage("Verify Account successfully");
+        return response;
+
     }
 
     @Override
