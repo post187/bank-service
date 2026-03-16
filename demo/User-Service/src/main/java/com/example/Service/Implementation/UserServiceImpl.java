@@ -162,7 +162,9 @@ public class UserServiceImpl implements UserService {
                         .status(Status.APPROVED)
                 .build());
 
-        response.setResponseMessage("Verify Account successfully");
+        verificationTokenRepository.deleteByUser(user);
+
+        response.setResponseMessage("Verify Account successfully. Please login again with your email and password");
         return response;
 
     }
