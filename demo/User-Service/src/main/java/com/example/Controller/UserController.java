@@ -45,14 +45,14 @@ public class UserController {
 
     @PutMapping("/change-contact")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    public ResponseEntity<UserDto> changeContact(@RequestParam("email") String email, @RequestBody String contactNumber) {
-        return ResponseEntity.ok(userService.changeContactNumber(email, contactNumber));
+    public ResponseEntity<UserDto> changeContact(@RequestBody String contactNumber) {
+        return ResponseEntity.ok(userService.changeContactNumber( contactNumber));
     }
 
     @PutMapping("/update-profile")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    public ResponseEntity<UserDto> updateMyProfile(@RequestParam("email") String email, @RequestBody UpdateUserProfile userProfile) {
-        return ResponseEntity.ok(userService.changeUserProfile(email, userProfile));
+    public ResponseEntity<UserDto> updateMyProfile(@RequestBody UpdateUserProfile userProfile) {
+        return ResponseEntity.ok(userService.changeUserProfile(userProfile));
     }
 
 //    @GetMapping("/account/{accountId}")
@@ -80,8 +80,8 @@ public class UserController {
 
     @GetMapping("/my-info")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    public ResponseEntity<UserDto> getMyInformation(@RequestParam("email") String email) {
-        return ResponseEntity.ok(userService.getMyInfo(email));
+    public ResponseEntity<UserDto> getMyInformation() {
+        return ResponseEntity.ok(userService.getMyInfo());
     }
 
     @PostMapping("login")

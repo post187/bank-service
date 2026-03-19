@@ -74,7 +74,7 @@ public class WebSecurityConfig {
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
                 .jwt(jwt -> jwt
-                        .jwtAuthenticationConverter(jwtAuthenticationConverter())
+                        .jwtAuthenticationConverter(new CustomConverter())
                         .decoder(jwtDecoder())).authenticationEntryPoint((request, response, authException) -> {
                             response.setContentType("application/json");
                             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);

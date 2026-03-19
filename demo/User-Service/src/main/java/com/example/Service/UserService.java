@@ -15,11 +15,11 @@ public interface UserService {
 
     List<UserDto> readAllUsers(int page);
 
-    UserDto getMyInfo(String email);
+    UserDto getMyInfo();
 
-    UserDto changeContactNumber(String email, String contactNumber);
+    UserDto changeContactNumber(String contactNumber);
 
-    UserDto changeUserProfile(String email, UpdateUserProfile profile);
+    UserDto changeUserProfile( UpdateUserProfile profile);
 
     Response updateUserStatus(Long id, UpdateStatus userUpdate);
 

@@ -4,7 +4,9 @@ import com.example.Exception.EmptyFields;
 import com.example.Exception.ResourceConflictException;
 import com.example.Exception.ResourceNotFoundException;
 import com.example.External.AccountService;
+import com.example.Jwt.CustomerAuthentication.CustomAuthentication;
 import com.example.Jwt.JwtProvider;
+import com.example.Jwt.UserDetail.UserPrinciple;
 import com.example.Model.Dto.Internal.*;
 import com.example.Model.Dto.Response.CreateResponse;
 import com.example.Model.Dto.Response.JwtResponse;
@@ -34,6 +36,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -69,6 +73,18 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    private String getMyEmail() {
+        Authentication customAuthentication = (CustomAuthentication)SecurityContextHolder.getContext().getAuthentication();
+        if (customAuthentication == null) return null;
+        Object principal = customAuthentication.getPrincipal();
+
+        if (principal instanceof CustomAuthentication customAuth) {
+            return customAuth.getEmail();
+        } else if (principal instanceof UserPrinciple userPrinciple) {
+            return userPrinciple.email();
+        }
+        return null;
+    }
 
     @Override
     public CreateResponse createUser(CreateUser userDto) {
@@ -226,14 +242,16 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserDto getMyInfo(String email) {
+    public UserDto getMyInfo() {
+        String email = getMyEmail();
         return userRepository.findByEmail(email)
                 .map(user -> userMapper.convertToDto(user))
                 .orElseThrow(() -> new ResourceNotFoundException("User not found on the server"));
     }
 
     @Override
-    public UserDto changeContactNumber(String email, String contactNumber) {
+    public UserDto changeContactNumber( String contactNumber) {
+        String email = getMyEmail();
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Email not found on the servers"));
 
@@ -245,7 +263,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserDto changeUserProfile(String email, UpdateUserProfile profile) {
+    public UserDto changeUserProfile( UpdateUserProfile profile) {
+        String email = getMyEmail();
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Email not found on the servers"));
 
