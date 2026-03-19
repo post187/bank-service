@@ -3,6 +3,8 @@ package com.example.Config;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.*;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,7 +12,6 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-@Builder
 @Data
 public class KeyCloakProperties {
     @Value("${app.config.keycloak.server-url}")
@@ -29,12 +30,27 @@ public class KeyCloakProperties {
 
     public Keycloak getKeycloakInstance() {
         if (keycloakInstance == null) {
+
+            String safeServerUrl = serverUrl != null ? serverUrl.trim() : "";
+            String safeRealm = realm != null ? realm.trim() : "";
+            String safeClientId = client_id != null ? client_id.trim() : "";
+            String safeClientSecret = client_secret != null ? client_secret.trim() : "";
+
+            // fix localhost -> tránh lỗi Docker / network
+            if (safeServerUrl.contains("localhost")) {
+                safeServerUrl = safeServerUrl.replace("localhost", "127.0.0.1");
+            }
+
+            System.out.println(">>> serverUrl = [" + safeServerUrl + "]");
+            System.out.println(">>> realm = [" + safeRealm + "]");
+            System.out.println(">>> clientId = [" + safeClientId + "]");
+
             keycloakInstance = KeycloakBuilder.builder()
-                    .serverUrl(serverUrl)
-                    .realm(realm)
-                    .clientId(client_id)
-                    .clientSecret(client_secret)
-                    .grantType("client_credentials")
+                    .serverUrl(safeServerUrl)   // ✅ FIX QUAN TRỌNG
+                    .realm(safeRealm)           // ✅ FIX
+                    .clientId(safeClientId)     // ✅ FIX
+                    .clientSecret(safeClientSecret) // ✅ FIX
+                    .grantType(OAuth2Constants.CLIENT_CREDENTIALS) // ✅ chuẩn
                     .build();
         }
 

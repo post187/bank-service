@@ -15,11 +15,7 @@ public class UserDto {
 
     private String email;
 
-    private String password;
-
     private String identificationNumber;
-
-    private String authId;
 
     private Status status;
 

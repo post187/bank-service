@@ -6,7 +6,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Repository;
 
 @Component
-@RequiredArgsConstructor
 public class KeyCloakManager {
     private final KeyCloakProperties keyCloakProperties;
 

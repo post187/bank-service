@@ -14,7 +14,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
-    @Value("${spring.application.bad_request}")
+    @Value("${spring.application.bad-request}")
     private String errorCodeBadRequest;
 
     @Value("${spring.application.conflict}")

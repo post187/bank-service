@@ -16,6 +16,8 @@ public class CreateUser {
 
     private String contactNumber;
 
+    private String identificationNumber;
+
     private String email;
 
     private String password;

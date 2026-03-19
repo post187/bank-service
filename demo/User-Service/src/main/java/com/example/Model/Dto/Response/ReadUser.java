@@ -1,5 +1,6 @@
 package com.example.Model.Dto.Response;
 
+import com.example.Model.Dto.Internal.Status;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

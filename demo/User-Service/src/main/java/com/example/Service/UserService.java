@@ -1,10 +1,8 @@
 package com.example.Service;
 
-import com.example.Model.Dto.Internal.CreateUser;
-import com.example.Model.Dto.Internal.UpdateStatus;
-import com.example.Model.Dto.Internal.UpdateUserProfile;
-import com.example.Model.Dto.Internal.UserDto;
+import com.example.Model.Dto.Internal.*;
 import com.example.Model.Dto.Response.CreateResponse;
+import com.example.Model.Dto.Response.JwtResponse;
 import com.example.Model.Dto.Response.Response;
 
 import java.util.List;
@@ -13,19 +11,25 @@ public interface UserService {
 
     CreateResponse createUser(CreateUser userDto);
 
-    List<UserDto> readAllUsers();
+    JwtResponse login(UserLogin login);
 
-    UserDto readUser(String authId);
+    List<UserDto> readAllUsers(int page);
+
+    UserDto getMyInfo(String email);
+
+    UserDto changeContactNumber(String email, String contactNumber);
+
+    UserDto changeUserProfile(String email, UpdateUserProfile profile);
 
     Response updateUserStatus(Long id, UpdateStatus userUpdate);
 
-    Response updateUser(Long id, UpdateUserProfile userUpdate);
+    Response updateUserProfile(Long id, UpdateUserProfile userUpdate);
 
     UserDto readUserById(Long userId);
 
-    UserDto readUserByAccountId(String accountId);
+//    UserDto readUserByAccountId(String accountId);
 
-    void addAdminRole(Long userId);
+    Response addAdminRole(Long userId);
 
     Response verifyToken(String tokenValue);
 

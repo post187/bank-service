@@ -9,7 +9,8 @@ import java.util.Optional;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
-    @Query("select * from users u where u.authId := authId")
+    @Query("SELECT u FROM User u WHERE u.authId = :authId")
     Optional<User> findUserByAuthId(String authId);
     Optional<User> findByEmail(String email);
+    boolean existsByEmail(String email);
 }

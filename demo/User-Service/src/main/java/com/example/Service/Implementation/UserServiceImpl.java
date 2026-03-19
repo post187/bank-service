@@ -4,8 +4,10 @@ import com.example.Exception.EmptyFields;
 import com.example.Exception.ResourceConflictException;
 import com.example.Exception.ResourceNotFoundException;
 import com.example.External.AccountService;
+import com.example.Jwt.JwtProvider;
 import com.example.Model.Dto.Internal.*;
 import com.example.Model.Dto.Response.CreateResponse;
+import com.example.Model.Dto.Response.JwtResponse;
 import com.example.Model.Dto.Response.Response;
 import com.example.Model.Entity.User;
 import com.example.Model.Entity.UserProfile;
@@ -24,11 +26,19 @@ import lombok.extern.slf4j.Slf4j;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
@@ -36,19 +46,19 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.example.Constant.AppConstant.NUMBER_OF_PAGE;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
-    private final AccountService accountService;
-    private final KeyCloakService keyCloakService;
+    private final JwtProvider jwtProvider;
     private final VerificationTokenRepository verificationTokenRepository;
-    private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final KafkaTemplate<String, String> kafkaTemplate;
 
     private UserMapper userMapper = new UserMapper();
-    private ObjectMapper objectMapper = new ObjectMapper();
 
     @Value("${spring.application.success}")
     private String responseCodeSuccess;
@@ -56,55 +66,42 @@ public class UserServiceImpl implements UserService {
     @Value("${spring.application.not_found}")
     private String responseCodeNotFound;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
 
     @Override
     public CreateResponse createUser(CreateUser userDto) {
-        List<UserRepresentation> userRepresentations = keyCloakService.readUserByEmail(userDto.getEmail());
+       boolean checkEmail = userRepository.existsByEmail(userDto.getEmail());
 
-        if (userRepresentations.size() > 0) {
-            log.error("This email is already registered a user");
-            throw new ResourceConflictException("This email is already registered as a user");
-        }
-        UserRepresentation userRepresentation = new UserRepresentation();
-        userRepresentation.setUsername(userDto.getEmail());
-        userRepresentation.setFirstName(userDto.getFirstName());
-        userRepresentation.setLastName(userDto.getLastName());
-        userRepresentation.setEmailVerified(false);
-        userRepresentation.setEnabled(false);
-        userRepresentation.setEmail(userDto.getEmail());
+       if (checkEmail) {
+           throw new ResourceConflictException("Email used on the servers");
+       }
 
-        CredentialRepresentation credentialRepresentation = new CredentialRepresentation();
-        credentialRepresentation.setValue(userDto.getPassword());
-        credentialRepresentation.setTemporary(false);
-        userRepresentation.setCredentials(Collections.singletonList(credentialRepresentation));
+       UserProfile userProfile = UserProfile.builder()
+               .firstName(userDto.getFirstName())
+               .lastName(userDto.getLastName())
+               .build();
 
-        Integer userCreationResponse = keyCloakService.createUser(userRepresentation);
+       User user = User.builder()
+               .email(userDto.getEmail())
+               .contactNo(userDto.getContactNumber())
+               .password(passwordEncoder.encode(userDto.getPassword()))
+               .status(Status.PENDING)
+               .roles(Collections.singleton("USER"))
+               .identificationNumber(userDto.getIdentificationNumber())
+               .verifyEmail(false)
+               .enable(false)
+               .userProfile(userProfile)
+               .build();
 
-        if (userRepresentations.equals(201)) {
-            List<UserRepresentation> representations = keyCloakService.readUserByEmail(userDto.getEmail());
+       userRepository.save(user);
 
-
-            UserProfile userProfile = UserProfile.builder()
-                    .firstName(userDto.getFirstName())
-                    .lastName(userDto.getLastName())
-                    .build();
-
-            User user = User.builder()
-                    .email(userDto.getEmail())
-                    .contactNo(userDto.getContactNumber())
-                    .status(Status.PENDING)
-                    .userProfile(userProfile)
-                    .build();
-
-            userRepository.save(user);
-
-            return CreateResponse.builder()
-                    .responseCode(responseCodeSuccess)
-                    .responseMessage("User created successfully")
-                    .email(user.getEmail())
-                    .build();
-        }
-        throw new RuntimeException("User with identification number not found");
+       return CreateResponse.builder()
+               .responseMessage("Created successfully. You must verify email")
+               .responseCode(responseCodeSuccess)
+               .email(userDto.getEmail())
+               .build();
     }
 
     @Override
@@ -136,15 +133,20 @@ public class UserServiceImpl implements UserService {
                 .build();
         verificationTokenRepository.save(verificationToken);
 
-        kafkaTemplate.send("registration-topic", user.getEmail(), token);
-        log.info("Email send", user.getEmail());
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                kafkaTemplate.send("registration-topic", user.getEmail(), token);
+            }
+        });
     }
 
     private String createToken() {
-        SecureRandom random = new SecureRandom();
-        int otp = new SecureRandom().nextInt(900000) + 100000;
-
-        return String.valueOf(otp);
+        String token;
+        do {
+            token = String.valueOf(new SecureRandom().nextInt(900000) + 100000);
+        } while (verificationTokenRepository.existsByToken(token));
+        return token;
     }
 
     @Override
@@ -170,41 +172,6 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<UserDto> readAllUsers() {
-        List<User> users = userRepository.findAll();
-
-        Map<String, UserRepresentation> userRepresentationMap =
-                keyCloakService.readUsers(
-                                users.stream()
-                                        .map(user -> user.getAuthId())
-                                        .collect(Collectors.toList())
-                        )
-                        .stream()
-                        .collect(Collectors.toMap(UserRepresentation::getId, Function.identity()));
-
-
-        return users.stream()
-                .map(user -> {
-                    UserDto userDto = userMapper.convertToDto(user);
-                    UserRepresentation userRepresentation = userRepresentationMap.get(user.getAuthId());
-                    userDto.setUserId(user.getUserId());
-                    userDto.setEmail(userRepresentation.getEmail());
-                    userDto.setIdentificationNumber(user.getIdentificationNumber());
-                    return userDto;
-                }).collect(Collectors.toList());
-    }
-
-    @Override
-    public UserDto readUser(String authId) {
-        User user  = userRepository.findUserByAuthId(authId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found in server"));
-        UserRepresentation userRepresentation = keyCloakService.readUser(authId);
-        UserDto userDto = userMapper.convertToDto(user);
-        userDto.setEmail(userRepresentation.getEmail());
-        return userDto;
-    }
-
-    @Override
     public Response updateUserStatus(Long id, UpdateStatus userUpdate) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found on the server"));
@@ -215,11 +182,8 @@ public class UserServiceImpl implements UserService {
         }
 
         if (userUpdate.getStatus().equals(Status.APPROVED)) {
-            UserRepresentation userRepresentation = keyCloakService.readUser(user.getAuthId());
-
-            userRepresentation.setEnabled(true);
-            userRepresentation.setEmailVerified(true);
-            keyCloakService.updateUser(userRepresentation);
+            user.setVerifyEmail(true);
+            user.setEnable(true);
         }
 
         user.setStatus(userUpdate.getStatus());
@@ -233,16 +197,21 @@ public class UserServiceImpl implements UserService {
                 .build();
     }
 
-    public void addAdminRole(Long userId) {
+    public Response addAdminRole(Long userId) {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        keyCloakService.addRealmRoleToUser(user.getAuthId(), "ADMIN");
+        user.getRoles().add("ADMIN");
+
+        return Response.builder()
+                .responseMessage("Add role to user successfully")
+                .responseCode(responseCodeSuccess)
+                .build();
     }
 
     @Override
-    public Response updateUser(Long id, UpdateUserProfile userUpdate) {
+    public Response updateUserProfile(Long id, UpdateUserProfile userUpdate) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found on the server"));
 
@@ -252,8 +221,40 @@ public class UserServiceImpl implements UserService {
 
         return Response.builder()
                 .responseCode(responseCodeSuccess)
-                .responseMessage("user update successfully")
+                .responseMessage("User update successfully")
                 .build();
+    }
+
+    @Override
+    public UserDto getMyInfo(String email) {
+        return userRepository.findByEmail(email)
+                .map(user -> userMapper.convertToDto(user))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found on the server"));
+    }
+
+    @Override
+    public UserDto changeContactNumber(String email, String contactNumber) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Email not found on the servers"));
+
+        user.setContactNo(contactNumber);
+
+        userRepository.save(user);
+
+        return userMapper.convertToDto(user);
+    }
+
+    @Override
+    public UserDto changeUserProfile(String email, UpdateUserProfile profile) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Email not found on the servers"));
+
+        UserProfile userProfile = user.getUserProfile();
+
+        BeanUtils.copyProperties(profile, userProfile);
+        userRepository.save(user);
+
+        return userMapper.convertToDto(user);
     }
 
     @Override
@@ -263,18 +264,55 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found on the server"));
     }
 
+//    @Override
+//    public UserDto readUserByAccountId(String accountId) {
+//        ResponseEntity<Account> response = accountService.readByAccountNumber(accountId);
+//
+//        if (Objects.isNull(response.getBody())) {
+//            throw new ResourceNotFoundException("Account not found on the server");
+//
+//        }
+//        Long userId = response.getBody().getUserId();
+//
+//        return userRepository.findById(userId)
+//                .map(user -> userMapper.convertToDto(user))
+//                .orElseThrow(() -> new ResourceNotFoundException("User not found on the server"));
+//    }
+
     @Override
-    public UserDto readUserByAccountId(String accountId) {
-        ResponseEntity<Account> response = accountService.readByAccountNumber(accountId);
+    public JwtResponse login(UserLogin login) {
+        User user = userRepository.findByEmail(login.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("Email not found on the servers"));
 
-        if (Objects.isNull(response.getBody())) {
-            throw new ResourceNotFoundException("Account not found on the server");
-
+        if (passwordEncoder.matches(login.getPassword(), user.getPassword())) {
+            throw new ResourceConflictException("Password not match");
         }
-        Long userId = response.getBody().getUserId();
 
-        return userRepository.findById(userId)
-                .map(user -> userMapper.convertToDto(user))
-                .orElseThrow(() -> new ResourceNotFoundException("User not found on the server"));
+        String accessToken = jwtProvider.generateAccessToken(login.getEmail(), user.getRoles());
+        String refreshToken = jwtProvider.generateRefreshToken(login.getEmail());
+
+        return JwtResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .email(login.getEmail())
+                .build();
     }
+
+    @Override
+    public List<UserDto> readAllUsers(int page) {
+        Pageable pageable = PageRequest.of(
+                page,
+                NUMBER_OF_PAGE,
+                Sort.by("email").ascending()
+        );
+
+        Page<User> userPage = userRepository.findAll(pageable);
+
+        return userPage.getContent()
+                .stream()
+                .map(userMapper::convertToDto)
+                .toList();
+    }
+
+
 }

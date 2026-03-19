@@ -13,7 +13,7 @@ import java.util.Map;
 public class Notification {
     @Id
     private String id;
-    private String userId;
+    private Long userId;
     private String title;
     private String content;
     private String type; // ORDER, VERIFY,..
