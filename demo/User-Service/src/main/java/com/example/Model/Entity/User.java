@@ -1,11 +1,12 @@
 package com.example.Model.Entity;
 
-import com.example.Model.Dto.Internal.Status;
+import com.example.Model.Dto.Internal.Status.Status;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Set;
 
 @Data
@@ -29,14 +30,9 @@ public class User {
     @Column
     private String contactNo;
 
-    @Column
-    private String authId;
-
     private boolean verifyEmail = false;
 
     private boolean enable = false;
-
-    private String identificationNumber;
 
     @CreationTimestamp
     private LocalDate creationOn;
@@ -46,7 +42,18 @@ public class User {
     @Enumerated(EnumType.STRING)
     private Status status;
 
+    @CreationTimestamp
+    private LocalDateTime lastLoginAt;
+
+    private int loginAttempts;
+
+    private LocalDateTime lockUntil;
+
+    @CreationTimestamp
+    private LocalDateTime lastChangePassword;
+
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "user_profile_id")
     private UserProfile userProfile;
+
 }

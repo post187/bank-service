@@ -1,9 +1,11 @@
-package com.example.Model.Dto.Internal;
+package com.example.Model.Dto.Response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -23,4 +25,6 @@ public class UserProfileDto {
     private String martialStatus;
 
     private String nationality;
+
+    private LocalDateTime dateOfBirth;
 }

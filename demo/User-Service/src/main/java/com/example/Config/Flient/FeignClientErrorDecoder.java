@@ -1,4 +1,4 @@
-package com.example.Config;
+package com.example.Config.Flient;
 
 import com.example.Exception.GlobalException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -6,8 +6,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import feign.Response;
 import feign.codec.ErrorDecoder;
 
-import lombok.extern.slf4j.Slf4j;
-import lombok.extern.slf4j.XSlf4j;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

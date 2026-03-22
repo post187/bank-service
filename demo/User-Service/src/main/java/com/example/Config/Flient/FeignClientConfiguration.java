@@ -1,4 +1,4 @@
-package com.example.Config;
+package com.example.Config.Flient;
 import feign.codec.ErrorDecoder;
 import org.springframework.cloud.openfeign.FeignClientProperties;
 import org.springframework.context.annotation.Bean;

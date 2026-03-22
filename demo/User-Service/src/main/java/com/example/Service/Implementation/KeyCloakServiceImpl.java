@@ -1,9 +1,8 @@
 package com.example.Service.Implementation;
 
-import com.example.Config.KeyCloakManager;
+import com.example.Config.KeyCloak.KeyCloakManager;
 import com.example.Service.KeyCloakService;
 import lombok.RequiredArgsConstructor;
-import org.apache.catalina.Realm;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.idm.RoleRepresentation;

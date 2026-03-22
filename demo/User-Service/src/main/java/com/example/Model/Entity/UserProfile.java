@@ -5,6 +5,11 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+import org.springframework.data.annotation.CreatedDate;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -20,6 +25,9 @@ public class UserProfile {
 
     private String firstName;
     private String lastName;
+
+    @CreationTimestamp
+    private LocalDate dateOfBirth;
 
     private String gender;
 

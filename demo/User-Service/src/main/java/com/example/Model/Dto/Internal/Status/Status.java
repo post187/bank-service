@@ -1,4 +1,4 @@
-package com.example.Model.Dto.Internal;
+package com.example.Model.Dto.Internal.Status;
 
 public enum Status {
 

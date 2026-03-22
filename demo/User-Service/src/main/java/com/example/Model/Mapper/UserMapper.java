@@ -1,7 +1,7 @@
 package com.example.Model.Mapper;
 
-import com.example.Model.Dto.Internal.UserDto;
-import com.example.Model.Dto.Internal.UserProfileDto;
+import com.example.Model.Dto.Response.UserDto;
+import com.example.Model.Dto.Response.UserProfileDto;
 import com.example.Model.Entity.User;
 import com.example.Model.Entity.UserProfile;
 import org.modelmapper.ModelMapper;
