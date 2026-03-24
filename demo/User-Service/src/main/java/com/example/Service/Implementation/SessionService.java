@@ -17,11 +17,11 @@ public class SessionService {
 
     private static final Duration SESSION_TTL = Duration.ofHours(2);
 
-    private String sessionKey(String sessionId) {
+    protected String sessionKey(String sessionId) {
         return "session:" + sessionId;
     }
 
-    private String userSessionsKey(Long userId) {
+    protected String userSessionsKey(Long userId) {
         return "user_sessions:" + userId;
     }
 
@@ -125,6 +125,36 @@ public class SessionService {
             }
         }
 
+        return result;
+    }
+
+    public List<Map<String, String>> getUserDevicesBrief(Long userId) {
+        String userKey = userSessionsKey(userId);
+
+        Set<String> sessionIds = redis.opsForSet().members(userKey);
+        List<Map<String, String>> result = new ArrayList<>();
+
+        if (sessionIds == null || sessionIds.isEmpty()) {
+            return result;
+        }
+
+        List<Object> fields = Arrays.asList("deviceId", "deviceName");
+
+        for (String sessionId : sessionIds) {
+            String sKey = sessionKey(sessionId);
+
+            List<Object> values = redis.opsForHash().multiGet(sKey, fields);
+
+            if (values.get(0) != null) {
+                Map<String, String> deviceData = new HashMap<>();
+                deviceData.put("sessionId", sessionId);
+                deviceData.put("deviceId", (String) values.get(0));
+                deviceData.put("deviceName", (String) values.get(1));
+                result.add(deviceData);
+            } else {
+                redis.opsForSet().remove(userKey, sessionId);
+            }
+        }
         return result;
     }
 }

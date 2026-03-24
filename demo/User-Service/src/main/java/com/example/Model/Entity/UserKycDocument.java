@@ -21,27 +21,40 @@ public class UserKycDocument {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 
-    private String identificationNumber;
+    private String submittedIdentificationNumber;
+    private String submittedFullName;
 
     @Enumerated(EnumType.STRING)
     private DocumentType documentType;
 
-    private String documentUrl;
+    private String ocrIdNumber;
+    private String ocrFullName;
+    private Double faceMatchScore;
+
+    private String frontCardUrl;
+    private String backCardUrl;
 
     private String selfieUrl;
 
     @Enumerated(EnumType.STRING)
     private KycStatus status;
 
+    @Column(length = 500)
     private String rejectionReason;
+
+    @Column(length = 1000)
+    private String adminNote;
 
     private LocalDateTime submittedAt;
 
     private LocalDateTime reviewedAt;
 
     private String reviewedBy;
+
+    private boolean isPotentiallyFake;
+
 }

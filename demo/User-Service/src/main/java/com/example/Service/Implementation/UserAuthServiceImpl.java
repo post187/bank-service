@@ -1,5 +1,6 @@
 package com.example.Service.Implementation;
 
+import com.example.Exception.AccountNotActivatedException;
 import com.example.Exception.EmptyFields;
 import com.example.Exception.ResourceConflictException;
 import com.example.Exception.ResourceNotFoundException;
@@ -12,7 +13,6 @@ import com.example.Model.Dto.Request.ChangePasswordRequest;
 import com.example.Model.Dto.Request.LoginRequest;
 import com.example.Model.Dto.Request.ResetPasswordRequest;
 import com.example.Model.Dto.Request.VerifyDeviceRequest;
-import com.example.Model.Dto.Response.CreateResponse;
 import com.example.Model.Dto.Response.JwtResponse;
 import com.example.Model.Dto.Response.Response;
 import com.example.Model.Dto.Response.UserDto;
@@ -24,7 +24,7 @@ import com.example.Repository.UserRepository;
 import com.example.Repository.VerificationTokenRepository;
 import com.example.Service.DeviceService;
 import com.example.Service.Extend.PasswordGenerator;
-import com.example.Service.UserService;
+import com.example.Service.UserAuth;
 import com.example.Utils.FieldChecked;
 import jakarta.ws.rs.BadRequestException;
 import lombok.RequiredArgsConstructor;
@@ -58,7 +58,7 @@ import static com.example.Constant.AppConstant.NUMBER_OF_PAGE;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class UserServiceImpl implements UserService {
+public class UserAuthServiceImpl implements UserAuth {
     private final UserRepository userRepository;
     private final StringRedisTemplate redis;
     private final VerificationTokenRepository verificationTokenRepository;
@@ -69,7 +69,6 @@ public class UserServiceImpl implements UserService {
 
     private static final int MAX_IN_REDIS = 10;
 
-    private UserMapper userMapper = new UserMapper();
 
     @Value("${spring.application.success}")
     private String responseCodeSuccess;
@@ -137,7 +136,9 @@ public class UserServiceImpl implements UserService {
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Email not found on the servers"));
-
+        if (!user.isEnable()) {
+            throw new AccountNotActivatedException("Account is not activated");
+        }
         // check lock DB
         if (user.getLockUntil() != null &&
         user.getLockUntil().isAfter(LocalDateTime.now())) {
@@ -381,7 +382,6 @@ public class UserServiceImpl implements UserService {
 
     }
 
-    @Override
     public Response updateUserStatus(Long id, UpdateStatus userUpdate) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found on the server"));
@@ -407,75 +407,6 @@ public class UserServiceImpl implements UserService {
                 .build();
     }
 
-    public Response addAdminRole(Long userId) {
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        user.getRoles().add("ADMIN");
-
-        return Response.builder()
-                .responseMessage("Add role to user successfully")
-                .responseCode(responseCodeSuccess)
-                .build();
-    }
-
-    @Override
-    public Response updateUserProfile(Long id, UpdateUserProfile userUpdate) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found on the server"));
-
-        user.setContactNo(userUpdate.getContactNo());
-        BeanUtils.copyProperties(userUpdate, user.getUserProfile());
-        userRepository.save(user);
-
-        return Response.builder()
-                .responseCode(responseCodeSuccess)
-                .responseMessage("User update successfully")
-                .build();
-    }
-
-    @Override
-    public UserDto getMyInfo() {
-        String email = getMyEmail();
-        return userRepository.findByEmail(email)
-                .map(user -> userMapper.convertToDto(user))
-                .orElseThrow(() -> new ResourceNotFoundException("User not found on the server"));
-    }
-
-    @Override
-    public UserDto changeContactNumber( String contactNumber) {
-        String email = getMyEmail();
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("Email not found on the servers"));
-
-        user.setContactNo(contactNumber);
-
-        userRepository.save(user);
-
-        return userMapper.convertToDto(user);
-    }
-
-    @Override
-    public UserDto changeUserProfile( UpdateUserProfile profile) {
-        String email = getMyEmail();
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("Email not found on the servers"));
-
-        UserProfile userProfile = user.getUserProfile();
-
-        BeanUtils.copyProperties(profile, userProfile);
-        userRepository.save(user);
-
-        return userMapper.convertToDto(user);
-    }
-
-    @Override
-    public UserDto readUserById(Long userId) {
-        return userRepository.findById(userId)
-                .map(user -> userMapper.convertToDto(user))
-                .orElseThrow(() -> new ResourceNotFoundException("User not found on the server"));
-    }
 
 //    @Override
 //    public UserDto readUserByAccountId(String accountId) {
@@ -491,22 +422,5 @@ public class UserServiceImpl implements UserService {
 //                .map(user -> userMapper.convertToDto(user))
 //                .orElseThrow(() -> new ResourceNotFoundException("User not found on the server"));
 //    }
-
-    @Override
-    public List<UserDto> readAllUsers(int page) {
-        Pageable pageable = PageRequest.of(
-                page,
-                NUMBER_OF_PAGE,
-                Sort.by("email").ascending()
-        );
-
-        Page<User> userPage = userRepository.findAll(pageable);
-
-        return userPage.getContent()
-                .stream()
-                .map(userMapper::convertToDto)
-                .toList();
-    }
-
 
 }

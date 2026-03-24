@@ -1,6 +1,7 @@
 package com.example.Model.Dto.Response;
 
 import com.example.Model.Dto.Internal.Status.DocumentType;
+import com.example.Model.Dto.Internal.Status.KycStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,24 +13,20 @@ import java.time.LocalDateTime;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserKycDto {
+public class UserKycDtoUser {
     private Long kycId;
 
-    private Long userId;
+    private KycStatus status;
 
-    private String identificationNumber;
-
+    private String maskedIdNumber;
     private DocumentType documentType;
+    private String fullName;
 
-    private String documentUrl;
-
+    private String frontCardUrl;
+    private String backCardUrl;
     private String selfieUrl;
-
-    private String rejectionReason;
-
     private LocalDateTime submittedAt;
+    private LocalDateTime updatedAt;
 
-    private LocalDateTime reviewedAt;
-
-    private String reviewedBy;
+    private String statusMessage;
 }

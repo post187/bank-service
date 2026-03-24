@@ -10,7 +10,7 @@ import com.example.Model.Dto.Response.*;
 
 import java.util.List;
 
-public interface UserService {
+public interface UserAuth {
 
     //auth
     Response createUser(CreateUser userDto);
@@ -28,38 +28,6 @@ public interface UserService {
     Response resetPassword(ResetPasswordRequest request);
 
     Response forgotPassword(String email);
-
-    //User
-    List<UserDto> readAllUsers(int page);
-
-    UserDto getMyInfo();
-
-    UserDto changeContactNumber(String contactNumber);
-
-    UserDto changeUserProfile( UpdateUserProfile profile);
-
-    //Admin
-    Response updateUserStatus(Long id, UpdateStatus userUpdate);
-
-    Response updateUserProfile(Long id, UpdateUserProfile userUpdate);
-
-    UserDto readUserById(Long userId);
-
-    Response disableUser(Long userId);
-
-    Response enableUser(Long userId);
-
-    Response addAdminRole(Long userId);
-
-    //Kyc
-    UserKycDto submitKyc(UpdateUserKyc request);
-
-    List<UserKycDto> getMyKycHistory();
-
-    UserKycDto getLatestKyc();
-
-    Response updateKycStatus(Long kycId, KycStatus status, String reason);
-
 
 //    UserDto readUserByAccountId(String accountId);
 

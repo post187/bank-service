@@ -5,5 +5,6 @@ public enum KycStatus {
     PENDING,         // Đang chờ xác minh
     VERIFIED,        // Đã xác minh thành công
     REJECTED,        // Bị từ chối
-    EXPIRED          // Giấy tờ hết hạn
+    EXPIRED,   // Giấy tờ hết hạn
+    UPDATING
 }

@@ -17,9 +17,9 @@ public class UserMapper extends BaseMapper<User, UserDto> {
         User user = new User();
         if (Objects.isNull(dto)) {
             BeanUtils.copyProperties(dto, user);
-            if(!Objects.isNull(dto.getUserProfileDto())){
+            if(!Objects.isNull(dto.getUserProfile())){
                 UserProfile userProfile = new UserProfile();
-                BeanUtils.copyProperties(dto.getUserProfileDto(), userProfile);
+                BeanUtils.copyProperties(dto.getUserProfile(), userProfile);
                 user.setUserProfile(userProfile);
             }
         }
@@ -34,7 +34,7 @@ public class UserMapper extends BaseMapper<User, UserDto> {
             if(!Objects.isNull(entity.getUserProfile())) {
                 UserProfileDto userProfileDto = new UserProfileDto();
                 BeanUtils.copyProperties(entity.getUserProfile(), userProfileDto);
-                userDto.setUserProfileDto(userProfileDto);
+                userDto.setUserProfile(userProfileDto);
             }
         }
         return userDto;

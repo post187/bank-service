@@ -30,7 +30,6 @@ public class UserPrinciple implements UserDetails {
 
     @JsonIgnore
     private String password;
-    private String identificationNumber;
     private boolean verifyEmail;
     private boolean enable;
     private Collection<? extends GrantedAuthority> roles;
@@ -46,14 +45,13 @@ public class UserPrinciple implements UserDetails {
                 .email(user.getEmail())
                 .password(user.getPassword())
                 .contactNo(user.getContactNo())
-                .identificationNumber(user.getIdentificationNumber())
                 .roles(authorityList)
                 .build();
     }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of();
+        return roles;
     }
 
     @Override
