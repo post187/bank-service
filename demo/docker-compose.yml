@@ -14,7 +14,27 @@ services:
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+
+  redis:
+    image: redis:7.2
+    container_name: redis_server
+    ports:
+      - "6379:6379"
+    command: [ "redis-server", "--timeout", "2000" ]
+    restart: always
+
+  mongodb:
+    image: mongo:7.0
+    container_name: mongo-db
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=notification-service
+    volumes:
+      - mongo_data:/data/db
+    restart: always

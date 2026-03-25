@@ -212,14 +212,19 @@ public class KycServiceImpl implements KycService {
 
         userKycRepository.save(userKyc);
 
-        // Optional notify
-        if (status == KycStatus.VERIFIED) {
-            kafkaTemplate.send("kyc-user", userKyc.getUser().getEmail(),
-                    "Your KYC verification has been approved successfully.");
-        } else if (status == KycStatus.REJECTED) {
-            kafkaTemplate.send("kyc-user", userKyc.getUser().getEmail(),
-                    "Your KYC verification was rejected. Reason: " + userKyc.getRejectionReason());
-        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                // Optional notify
+                if (status == KycStatus.VERIFIED) {
+                    kafkaTemplate.send("kyc-user", userKyc.getUser().getEmail(),
+                            "Your KYC verification has been approved successfully.");
+                } else if (status == KycStatus.REJECTED) {
+                    kafkaTemplate.send("kyc-user", userKyc.getUser().getEmail(),
+                            "Your KYC verification was rejected. Reason: " + userKyc.getRejectionReason());
+                }
+            }
+        });
 
         return Response.builder()
                 .responseCode(responseCodeSuccess)

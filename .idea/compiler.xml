@@ -9,6 +9,7 @@
         <outputRelativeToContentRoot value="true" />
         <module name="Notification-Service" />
         <module name="Transaction-Service" />
+        <module name="AI-Service" />
         <module name="ApiGateway" />
         <module name="User-Service" />
       </profile>
@@ -16,6 +17,7 @@
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="AI-Service" options="-parameters" />
       <module name="ApiGateway" options="-parameters" />
       <module name="Notification-Service" options="-parameters" />
       <module name="Transaction-Service" options="-parameters" />

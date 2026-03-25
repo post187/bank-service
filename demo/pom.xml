@@ -26,6 +26,7 @@
         <module>Transaction-Service</module>
 		<module>Notification-Service</module>
 		<module>ApiGateway</module>
+		<module>AI-Service</module>
 	</modules>
 	<scm>
 		<connection/>

@@ -31,3 +31,15 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# ======================
+# Env & config (sensitive)
+# ======================
+.env
+.env.*
+
+# ======================
+# YAML config (nếu không muốn push)
+# ======================
+*.yml
+*.yaml
