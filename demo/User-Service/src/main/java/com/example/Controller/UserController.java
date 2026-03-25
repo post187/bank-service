@@ -1,13 +1,25 @@
 package com.example.Controller;
 
-import com.example.Model.Dto.Internal.*;
-import com.example.Model.Dto.Response.CreateResponse;
+import com.example.Model.Dto.Internal.CreateUser;
+import com.example.Model.Dto.Internal.Status.KycStatus;
+import com.example.Model.Dto.Internal.UpdateStatus;
+import com.example.Model.Dto.Internal.UpdateUserProfile;
+import com.example.Model.Dto.Request.ChangePasswordRequest;
 import com.example.Model.Dto.Response.JwtResponse;
 import com.example.Model.Dto.Response.Response;
+import com.example.Model.Dto.Response.DeviceDto;
 import com.example.Model.Dto.Response.UserDto;
+import com.example.Model.Dto.Response.UserKycDtoAdmin;
+import com.example.Model.Dto.Response.UserKycDtoUser;
+import com.example.Model.Dto.Request.LoginRequest;
+import com.example.Model.Dto.Request.ResetPasswordRequest;
+import com.example.Model.Dto.Request.UpdateUserKyc;
+import com.example.Model.Dto.Request.VerifyDeviceRequest;
 import com.example.Service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,7 +35,7 @@ public class UserController {
     private final UserService userService;
 
     @PostMapping("/register")
-    public ResponseEntity<CreateResponse> createUser(@RequestBody CreateUser userDto) {
+    public ResponseEntity<Response> createUser(@RequestBody CreateUser userDto) {
         log.info("Creating user with: {}", userDto.toString());
         return ResponseEntity.ok(userService.createUser(userDto));
     }
@@ -35,7 +47,7 @@ public class UserController {
         return new ResponseEntity<>(userService.updateUserStatus(id, update), HttpStatus.OK);
     }
 
-    @PutMapping("/{userId}")
+    @GetMapping("/{userId}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserDto> readUserById(@PathVariable Long userId) {
         log.info("reading user by ID");
@@ -46,7 +58,7 @@ public class UserController {
     @PutMapping("/change-contact")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<UserDto> changeContact(@RequestBody String contactNumber) {
-        return ResponseEntity.ok(userService.changeContactNumber( contactNumber));
+        return ResponseEntity.ok(userService.changeContactNumber(contactNumber));
     }
 
     @PutMapping("/update-profile")
@@ -84,9 +96,45 @@ public class UserController {
         return ResponseEntity.ok(userService.getMyInfo());
     }
 
-    @PostMapping("login")
-    public ResponseEntity<JwtResponse> login(@RequestBody UserLogin userLogin) {
-        return ResponseEntity.ok(userService.login(userLogin));
+    @PostMapping("/login")
+    public ResponseEntity<JwtResponse> login(@RequestBody LoginRequest loginRequest) {
+        return ResponseEntity.ok(userService.login(loginRequest));
+    }
+
+    @PostMapping("/verify-device")
+    public ResponseEntity<JwtResponse> verifyDeviceAndLogin(@RequestBody VerifyDeviceRequest request) {
+        return ResponseEntity.ok(userService.verifyDeviceAndLogin(request));
+    }
+
+    @PostMapping("/logout")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<Response> logout() {
+        return ResponseEntity.ok(userService.logout());
+    }
+
+    @PostMapping("/refresh-token")
+    public ResponseEntity<JwtResponse> refreshToken(
+            @RequestParam("refreshToken") String refreshToken
+    ) {
+        return ResponseEntity.ok(userService.refreshToken(refreshToken));
+    }
+
+    @PutMapping("/change-password")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<Response> changePassword(
+            @RequestBody ChangePasswordRequest request
+    ) {
+        return ResponseEntity.ok(userService.changePassword(request));
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Response> forgotPassword(@RequestParam("email") String email) {
+        return ResponseEntity.ok(userService.forgotPassword(email));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<Response> resetPassword(@RequestBody ResetPasswordRequest request) {
+        return ResponseEntity.ok(userService.resetPassword(request));
     }
 
     @PutMapping("/change-profile/{id}")
@@ -97,8 +145,115 @@ public class UserController {
 
     @PutMapping("/add-role-admin/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Response> updateRoleToUser(@PathVariable Long id, @RequestBody String role) {
+    public ResponseEntity<Response> updateRoleToUser(@PathVariable Long id) {
         return ResponseEntity.ok(userService.addAdminRole(id));
+    }
+
+    @PutMapping("/{userId}/disable")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Response> disableUser(@PathVariable Long userId) {
+        return ResponseEntity.ok(userService.disableUser(userId));
+    }
+
+    @PutMapping("/{userId}/enable")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Response> enableUser(@PathVariable Long userId) {
+        return ResponseEntity.ok(userService.enableUser(userId));
+    }
+
+    @DeleteMapping("/{userId}/devices/{deviceId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Response> revokeDevice(@PathVariable Long userId, @PathVariable String deviceId) {
+        return ResponseEntity.ok(userService.revokeDevice(userId, deviceId));
+    }
+
+    @DeleteMapping("/{userId}/sessions")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Response> forceLogout(@PathVariable Long userId) {
+        return ResponseEntity.ok(userService.forceLogout(userId));
+    }
+
+    @GetMapping("/{userId}/devices")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<DeviceDto>> getUserDevices(@PathVariable Long userId) {
+        return ResponseEntity.ok(userService.getUserDevices(userId));
+    }
+
+    @PostMapping("/kyc")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<UserKycDtoUser> submitKyc(@RequestBody UpdateUserKyc request) {
+        return ResponseEntity.ok(userService.submitKyc(request));
+    }
+
+    @GetMapping("/kyc/history")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<List<UserKycDtoUser>> getMyKycHistory() {
+        return ResponseEntity.ok(userService.getMyKycHistory());
+    }
+
+    @GetMapping("/kyc/latest")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<UserKycDtoUser> getLatestKyc() {
+        return ResponseEntity.ok(userService.getLatestKyc());
+    }
+
+    @PatchMapping("/kyc/{kycId}/status")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Response> updateKycStatus(
+            @PathVariable Long kycId,
+            @RequestParam("status") KycStatus status,
+            @RequestParam(value = "reason", required = false) String reason
+    ) {
+        return ResponseEntity.ok(userService.updateKycStatus(kycId, status, reason));
+    }
+
+    @GetMapping("/kyc/pending")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Page<UserKycDtoAdmin>> getPendingKyc(Pageable pageable) {
+        return ResponseEntity.ok(userService.getPendingKyc(pageable));
+    }
+
+    @PutMapping("/kyc/{kycId}/approve")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Response> approveKyc(
+            @PathVariable Long kycId,
+            @RequestParam(value = "adminNote", required = false) String adminNote
+    ) {
+        return ResponseEntity.ok(userService.approveKyc(kycId, adminNote));
+    }
+
+    @PutMapping("/kyc/{kycId}/reject")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Response> rejectKyc(
+            @PathVariable Long kycId,
+            @RequestParam("rejectionReason") String rejectionReason,
+            @RequestParam(value = "adminNote", required = false) String adminNote
+    ) {
+        return ResponseEntity.ok(userService.rejectKyc(kycId, rejectionReason, adminNote));
+    }
+
+    @GetMapping("/kyc/updating")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Page<UserKycDtoAdmin>> getUpdatingKyc(Pageable pageable) {
+        return ResponseEntity.ok(userService.getUpdateKyc(pageable));
+    }
+
+    @PutMapping("/kyc/{kycId}/profile-change/approve")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Response> approveProfileChange(
+            @PathVariable Long kycId,
+            @RequestParam(value = "adminNote", required = false) String adminNote
+    ) {
+        return ResponseEntity.ok(userService.approveProfileChange(kycId, adminNote));
+    }
+
+    @PutMapping("/kyc/{kycId}/profile-change/reject")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Response> rejectProfileChange(
+            @PathVariable Long kycId,
+            @RequestParam("reason") String reason
+    ) {
+        return ResponseEntity.ok(userService.rejectProfileChange(kycId, reason));
     }
 
 }

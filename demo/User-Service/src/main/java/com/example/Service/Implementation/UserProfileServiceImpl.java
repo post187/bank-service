@@ -11,7 +11,6 @@ import com.example.Model.Mapper.UserMapper;
 import com.example.Repository.UserRepository;
 import com.example.Service.UserProfileService;
 import lombok.RequiredArgsConstructor;
-import org.hibernate.validator.constraints.pl.REGON;
 import org.springframework.beans.BeanUtils;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -65,6 +64,10 @@ public class UserProfileServiceImpl implements UserProfileService {
                 .orElseThrow(() -> new ResourceNotFoundException("Email not found on the servers"));
 
         UserProfile userProfile = user.getUserProfile();
+        if (userProfile == null) {
+            userProfile = new UserProfile();
+            user.setUserProfile(userProfile);
+        }
 
         BeanUtils.copyProperties(profile, userProfile);
         userRepository.save(user);

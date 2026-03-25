@@ -92,6 +92,16 @@ public class UserAuthServiceImpl implements UserAuth {
         return null;
     }
 
+    private String getMySessionId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication instanceof CustomAuthentication customAuth) {
+            return customAuth.getSessionId();
+        }
+
+        return null;
+    }
+
     @Override
     public Response createUser(CreateUser userDto) {
         if (userRepository.existsByEmail(userDto.getEmail())) {
@@ -169,9 +179,8 @@ public class UserAuthServiceImpl implements UserAuth {
             String sessionId = sessionService.createSession(user, request);
 
             return JwtResponse.builder()
-                    .accessToken(jwtProvider.generateAccessToken(user.getEmail(), user.getRoles()))
-                    .refreshToken(jwtProvider.generateRefreshToken(user.getEmail()))
-                    .sessionId(sessionId)
+                    .accessToken(jwtProvider.generateAccessToken(user.getEmail(), user.getRoles(), sessionId))
+                    .refreshToken(jwtProvider.generateRefreshToken(user.getEmail(), sessionId))
                     .build();
         }
         deviceService.handleNewDevice(user.getUserId(), request);
@@ -180,10 +189,11 @@ public class UserAuthServiceImpl implements UserAuth {
     }
 
     @Override
-    public Response logout(String sessionId) {
+    public Response logout() {
         User user = userRepository.findByEmail(getMyEmail())
                 .orElseThrow(() -> new ResourceNotFoundException("Email not found on the servers"));
 
+        String sessionId = getMySessionId();
         sessionService.deleteSession(user.getUserId(), sessionId);
 
         return Response.builder()
@@ -208,14 +218,15 @@ public class UserAuthServiceImpl implements UserAuth {
         String sessionId = sessionService.createSession(user, loginInfo);
 
         return JwtResponse.builder()
-                .accessToken(jwtProvider.generateAccessToken(user.getEmail(), user.getRoles()))
-                .refreshToken(jwtProvider.generateRefreshToken(user.getEmail()))
-                .sessionId(sessionId)
+                .accessToken(jwtProvider.generateAccessToken(user.getEmail(), user.getRoles(), sessionId))
+                .refreshToken(jwtProvider.generateRefreshToken(user.getEmail(), sessionId))
                 .build();
     }
 
     @Override
-    public JwtResponse refreshToken(String sessionId, String refreshToken) {
+    public JwtResponse refreshToken(String refreshToken) {
+        String sessionId = jwtProvider.getSessionIdFromToken(refreshToken);
+
         if (!sessionService.isSessionValid(sessionId)) {
             throw new ResourceConflictException("Session expired. Please login again");
         }
@@ -231,12 +242,11 @@ public class UserAuthServiceImpl implements UserAuth {
 
         sessionService.extendSession(sessionId);
 
-        String newAccessToken = jwtProvider.generateAccessToken(user.getEmail(), user.getRoles());
+        String newAccessToken = jwtProvider.generateAccessToken(user.getEmail(), user.getRoles(), sessionId);
 
         return JwtResponse.builder()
                 .accessToken(newAccessToken)
                 .refreshToken(refreshToken)
-                .sessionId(sessionId)
                 .build();
     }
 
@@ -288,7 +298,8 @@ public class UserAuthServiceImpl implements UserAuth {
 
     @Override
     @Transactional
-    public Response changePassword(ChangePasswordRequest request, String sessionId) {
+    public Response changePassword(ChangePasswordRequest request) {
+        String sessionId = getMySessionId();
         String currentEmail = getMyEmail();
         User user = userRepository.findByEmail(currentEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("Email not found on the server"));

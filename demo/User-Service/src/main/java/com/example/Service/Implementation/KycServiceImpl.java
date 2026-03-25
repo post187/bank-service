@@ -116,7 +116,7 @@ public class KycServiceImpl implements KycService {
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
-                kafkaTemplate.send("kyc-ai-check", request.getKycId(), event);
+                kafkaTemplate.send("kyc-ai-check", saved.getId().toString(), event);
             }
         });
         return userKycMapper.toUserDto(saved);

@@ -16,7 +16,4 @@ public class JwtResponse {
 
     @JsonProperty("refresh_token")
     private String refreshToken;
-
-    private String sessionId;
-
 }

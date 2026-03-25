@@ -9,15 +9,21 @@ import java.util.Collection;
 
 public class CustomAuthentication extends JwtAuthenticationToken {
     private final String email;
+    private final String sessionId;
     public CustomAuthentication(Jwt jwt,
                                 Collection<? extends GrantedAuthority> authorities,
-                                String email) {
+                                String email, String sessionId) {
         super(jwt, authorities, email);
         this.email = email;
+        this.sessionId = sessionId;
     }
 
     public String getEmail() {
         return this.email;
+    }
+
+    public String getSessionId() {
+        return this.sessionId;
     }
 
 

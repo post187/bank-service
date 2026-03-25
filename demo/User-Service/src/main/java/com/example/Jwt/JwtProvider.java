@@ -29,7 +29,7 @@ public class JwtProvider {
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
 
-    public String generateAccessToken(String email, Set<String> roles) {
+    public String generateAccessToken(String email, Set<String> roles, String sessionId) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + accessTokenExpiration);
 
@@ -38,22 +38,34 @@ public class JwtProvider {
                 .subject(email)
                 // Truyền thẳng List<String> vào đây, JJWT sẽ tự động ép kiểu thành Mảng JSON
                 .claim("role", roles)
+                .claim("sessionId", sessionId)
                 .expiration(expiryDate)
                 .issuedAt(now)
                 .signWith(getSignKey()) // Cú pháp chuẩn của bản mới
                 .compact();
     }
 
-    public String generateRefreshToken(String email) {
+    public String generateRefreshToken(String email, String sessionId) {
         Date now = new Date();
         Date expiryTime = new Date(now.getTime() + refreshTokenExpiration);
 
         return Jwts.builder()
                 .subject(email)
+                .claim("sessionId", sessionId)
                 .issuedAt(now)
                 .expiration(expiryTime)
                 .signWith(getSignKey())
                 .compact();
+    }
+
+    public String getSessionIdFromToken(String token) {
+        Claims claims = Jwts.parser()
+                .verifyWith(getSignKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+
+        return claims.get("sessionId", String.class);
     }
 
     public boolean validateToken(String token) {

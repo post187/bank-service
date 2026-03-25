@@ -125,7 +125,7 @@ public class AdminServiceImpl implements UserAdminService {
                 .responseCode(responseCodeSuccess)
                 .build();
     }
-    
+
     /**
      * Force logout user from all devices
      * @param userId

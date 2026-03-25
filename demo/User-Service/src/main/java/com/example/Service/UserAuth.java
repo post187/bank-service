@@ -19,11 +19,11 @@ public interface UserAuth {
 
     JwtResponse verifyDeviceAndLogin(VerifyDeviceRequest request);
 
-    Response logout(String sessionId);
+    Response logout();
 
-    JwtResponse refreshToken(String sessionId, String refreshToken);
+    JwtResponse refreshToken(String refreshToken);
 
-    Response changePassword(ChangePasswordRequest request, String sessionId);
+    Response changePassword(ChangePasswordRequest request);
 
     Response resetPassword(ResetPasswordRequest request);
 
