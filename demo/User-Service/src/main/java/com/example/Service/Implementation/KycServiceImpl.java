@@ -139,7 +139,7 @@ public class KycServiceImpl implements KycService {
         }
         UserKycDocument userKyc = userKycRepository.findById(resultEvent.getKycId())
                 .orElseThrow(() -> new ResourceNotFoundException("KYC request not found"));
-        // Chỉ xử lý khi hồ sơ còn pending (tránh ghi đè hồ sơ đã admin duyệt)
+
         if (userKyc.getStatus() != KycStatus.PENDING) {
             return;
         }

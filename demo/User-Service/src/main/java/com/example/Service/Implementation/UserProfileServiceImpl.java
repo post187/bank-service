@@ -45,7 +45,7 @@ public class UserProfileServiceImpl implements UserProfileService {
     }
 
     @Override
-    public UserDto changeContactNumber( String contactNumber) {
+    public UserDto changeContactNumber(String contactNumber) {
         String email = getMyEmail();
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Email not found on the servers"));
@@ -58,7 +58,7 @@ public class UserProfileServiceImpl implements UserProfileService {
     }
 
     @Override
-    public UserDto changeUserProfile( UpdateUserProfile profile) {
+    public UserDto changeUserProfile(UpdateUserProfile profile) {
         String email = getMyEmail();
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Email not found on the servers"));
