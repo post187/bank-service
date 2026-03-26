@@ -1,5 +1,6 @@
 package com.example.External;
 
+import com.example.Config.Flient.FeignRetryConfig;
 import com.example.Model.External.Account;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.cloud.openfeign.FeignClientProperties;
@@ -11,7 +12,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 @FeignClient(
         name = "account-service",
         url = "${services.account.url}",
-        configuration = FeignClientProperties.FeignClientConfiguration.class
+        configuration = { FeignClientProperties.FeignClientConfiguration.class,
+                FeignRetryConfig.class}
 )
 public interface AccountService {
     @GetMapping("/api/accounts/{accountId}")

@@ -15,7 +15,13 @@ import java.time.LocalDateTime;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "user-kyc-documents")
+@Table(name = "user-kyc-documents",
+        indexes = {
+                @Index(
+                        name = "idx_kyc_user_submitted",
+                        columnList = "user_id, submitted_at DESC"
+                )
+        })
 public class UserKycDocument {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
