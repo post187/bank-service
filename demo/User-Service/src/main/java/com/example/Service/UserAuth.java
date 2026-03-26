@@ -29,7 +29,7 @@ public interface UserAuth {
 
     Response forgotPassword(String email);
 
-//    UserDto readUserByAccountId(String accountId);
+    UserDto readUserByAccountId(Long accountId);
 
     Response verifyToken(String tokenValue);
 

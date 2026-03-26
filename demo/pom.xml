@@ -27,7 +27,8 @@
 		<module>Notification-Service</module>
 		<module>ApiGateway</module>
 		<module>AI-Service</module>
-	</modules>
+        <module>Account-Service</module>
+    </modules>
 	<scm>
 		<connection/>
 		<developerConnection/>

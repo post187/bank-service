@@ -19,4 +19,6 @@ public interface UserKycRepository extends JpaRepository<UserKycDocument, Long> 
     List<UserKycDocument> findByUser_EmailOrderBySubmittedAtDesc(String email);
 
     Optional<UserKycDocument> findTopByUser_EmailOrderBySubmittedAtDesc(String email);
+
+    Optional<UserKycDocument> findTopByUser_UserIdOrderBySubmittedAtDesc(Long userId);
 }

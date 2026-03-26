@@ -4,6 +4,7 @@ import com.example.Exception.AccountNotActivatedException;
 import com.example.Exception.EmptyFields;
 import com.example.Exception.ResourceConflictException;
 import com.example.Exception.ResourceNotFoundException;
+import com.example.External.AccountService;
 import com.example.Jwt.CustomerAuthentication.CustomAuthentication;
 import com.example.Jwt.JwtProvider;
 import com.example.Jwt.UserDetail.UserPrinciple;
@@ -19,6 +20,7 @@ import com.example.Model.Dto.Response.UserDto;
 import com.example.Model.Entity.User;
 import com.example.Model.Entity.UserProfile;
 import com.example.Model.Entity.VerificationToken;
+import com.example.Model.External.Account;
 import com.example.Model.Mapper.UserMapper;
 import com.example.Repository.UserRepository;
 import com.example.Repository.VerificationTokenRepository;
@@ -37,6 +39,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -66,6 +69,9 @@ public class UserAuthServiceImpl implements UserAuth {
     private final JwtProvider jwtProvider;
     private final DeviceService deviceService;
     private final SessionService sessionService;
+    private final AccountService accountService;
+
+    private UserMapper userMapper = new UserMapper();
 
     private static final int MAX_IN_REDIS = 10;
 
@@ -419,19 +425,19 @@ public class UserAuthServiceImpl implements UserAuth {
     }
 
 
-//    @Override
-//    public UserDto readUserByAccountId(String accountId) {
-//        ResponseEntity<Account> response = accountService.readByAccountNumber(accountId);
-//
-//        if (Objects.isNull(response.getBody())) {
-//            throw new ResourceNotFoundException("Account not found on the server");
-//
-//        }
-//        Long userId = response.getBody().getUserId();
-//
-//        return userRepository.findById(userId)
-//                .map(user -> userMapper.convertToDto(user))
-//                .orElseThrow(() -> new ResourceNotFoundException("User not found on the server"));
-//    }
+    @Override
+    public UserDto readUserByAccountId(Long accountId) {
+        ResponseEntity<Account> response = accountService.readByAccountNumber(accountId);
+
+        if (Objects.isNull(response.getBody())) {
+            throw new ResourceNotFoundException("Account not found on the server");
+
+        }
+        Long userId = response.getBody().getUserId();
+
+        return userRepository.findById(userId)
+                .map(user -> userMapper.convertToDto(user))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found on the server"));
+    }
 
 }

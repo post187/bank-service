@@ -5,6 +5,7 @@ import com.example.Model.Dto.Internal.Status.KycStatus;
 import com.example.Model.Dto.Internal.UpdateStatus;
 import com.example.Model.Dto.Internal.UpdateUserProfile;
 import com.example.Model.Dto.Request.ChangePasswordRequest;
+import com.example.Model.Dto.Response.AccountEligibilityResponse;
 import com.example.Model.Dto.Response.JwtResponse;
 import com.example.Model.Dto.Response.Response;
 import com.example.Model.Dto.Response.DeviceDto;
@@ -53,6 +54,11 @@ public class UserController {
         log.info("reading user by ID");
 
         return ResponseEntity.ok(userService.readUserById(userId));
+    }
+
+    @GetMapping("/internal/{userId}/account-eligibility")
+    public ResponseEntity<AccountEligibilityResponse> getAccountEligibility(@PathVariable Long userId) {
+        return ResponseEntity.ok(userService.getAccountEligibility(userId));
     }
 
     @PutMapping("/change-contact")
@@ -135,6 +141,11 @@ public class UserController {
     @PostMapping("/reset-password")
     public ResponseEntity<Response> resetPassword(@RequestBody ResetPasswordRequest request) {
         return ResponseEntity.ok(userService.resetPassword(request));
+    }
+
+    @GetMapping("/account/{accountId}")
+    public ResponseEntity<UserDto> getAccountId(@PathVariable Long accountId) {
+        return ResponseEntity.ok(userService.readUserByAccountId(accountId));
     }
 
     @PutMapping("/change-profile/{id}")

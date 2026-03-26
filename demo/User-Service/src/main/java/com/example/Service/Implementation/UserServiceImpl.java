@@ -3,6 +3,7 @@ package com.example.Service.Implementation;
 import com.example.Model.Dto.External.KycAiResultEvent;
 import com.example.Model.Dto.Internal.CreateUser;
 import com.example.Model.Dto.Internal.Status.KycStatus;
+import com.example.Model.Dto.Internal.Status.Status;
 import com.example.Model.Dto.Internal.UpdateStatus;
 import com.example.Model.Dto.Internal.UpdateUserProfile;
 import com.example.Model.Dto.Request.ChangePasswordRequest;
@@ -10,12 +11,16 @@ import com.example.Model.Dto.Request.LoginRequest;
 import com.example.Model.Dto.Request.ResetPasswordRequest;
 import com.example.Model.Dto.Request.UpdateUserKyc;
 import com.example.Model.Dto.Request.VerifyDeviceRequest;
+import com.example.Model.Dto.Response.AccountEligibilityResponse;
 import com.example.Model.Dto.Response.DeviceDto;
 import com.example.Model.Dto.Response.JwtResponse;
 import com.example.Model.Dto.Response.Response;
 import com.example.Model.Dto.Response.UserDto;
 import com.example.Model.Dto.Response.UserKycDtoAdmin;
 import com.example.Model.Dto.Response.UserKycDtoUser;
+import com.example.Model.Entity.User;
+import com.example.Repository.UserKycRepository;
+import com.example.Repository.UserRepository;
 import com.example.Service.KycService;
 import com.example.Service.UserAdminService;
 import com.example.Service.UserAuth;
@@ -35,6 +40,8 @@ public class UserServiceImpl implements UserService {
     private final UserAdminService userAdminService;
     private final UserProfileService userProfileService;
     private final KycService kycService;
+    private final UserRepository userRepository;
+    private final UserKycRepository userKycRepository;
 
     @Override
     public Response createUser(CreateUser userDto) {
@@ -74,6 +81,11 @@ public class UserServiceImpl implements UserService {
     @Override
     public Response forgotPassword(String email) {
         return userAuthService.forgotPassword(email);
+    }
+
+    @Override
+    public UserDto readUserByAccountId(Long accountId) {
+        return userAuthService.readUserByAccountId(accountId);
     }
 
     @Override
@@ -204,5 +216,47 @@ public class UserServiceImpl implements UserService {
     @Override
     public Response updateKycStatus(Long kycId, KycStatus status, String reason) {
         return kycService.updateKycStatus(kycId, status, reason);
+    }
+
+    @Override
+    public AccountEligibilityResponse getAccountEligibility(Long userId) {
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null) {
+            return AccountEligibilityResponse.builder()
+                    .userId(userId)
+                    .userExists(false)
+                    .active(false)
+                    .kycVerified(false)
+                    .eligible(false)
+                    .latestKycStatus(KycStatus.NOT_SUBMITTED.name())
+                    .reason("User not found")
+                    .build();
+        }
+
+        boolean active = user.isEnable() && user.isVerifyEmail() && user.getStatus() == Status.APPROVED;
+        KycStatus latestKycStatus = userKycRepository.findTopByUser_UserIdOrderBySubmittedAtDesc(userId)
+                .map(kyc -> kyc.getStatus())
+                .orElse(KycStatus.NOT_SUBMITTED);
+        boolean kycVerified = latestKycStatus == KycStatus.VERIFIED;
+        boolean eligible = active && kycVerified;
+
+        String reason;
+        if (!active) {
+            reason = "User account is not active or not verified";
+        } else if (!kycVerified) {
+            reason = "User KYC is not verified";
+        } else {
+            reason = "User is eligible to create account";
+        }
+
+        return AccountEligibilityResponse.builder()
+                .userId(userId)
+                .userExists(true)
+                .active(active)
+                .kycVerified(kycVerified)
+                .eligible(eligible)
+                .latestKycStatus(latestKycStatus.name())
+                .reason(reason)
+                .build();
     }
 }
