@@ -38,6 +38,82 @@ services:
     volumes:
       - mongo_data:/data/db
     restart: always
+  user-service:
+    build:
+      context: .
+      dockerfile: User-Service/Dockerfile
+    container_name: user-service
+    ports:
+      - "8082:8082"
+    depends_on:
+      - eureka-server
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+    networks:
+      - micro-net
+  account-service:
+    build:
+      context: .
+      dockerfile: Account-Service/Dockerfile
+    container_name: account-service
+    ports:
+      - "8085:8085"
+    depends_on:
+      - eureka-server
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+    networks:
+      - micro-net
 
+  api-gateway:
+    build:
+      context: .
+      dockerfile: ApiGateway/Dockerfile
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - eureka-server
+      - user-service
+      - account-service
+      - transaction-service
+      - notification-service
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+    networks:
+      - micro-net
+  transaction-service:
+    build:
+      context: .
+      dockerfile: Transaction-Service/Dockerfile
+    container_name: transaction-service
+    ports:
+      - "8086:8086"
+    depends_on:
+      - eureka-server
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+    networks:
+      - micro-net
+  notification-service:
+    build:
+      context: .
+      dockerfile: Notification-Service/Dockerfile
+    container_name: notification-service
+    ports:
+      - "8087:8087"
+    depends_on:
+      - eureka-server
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+    networks:
+      - micro-net
+  eureka-server:
+    build: ./eureka-server
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+    networks:
+      - micro-net
 volumes:
   mongo_data:

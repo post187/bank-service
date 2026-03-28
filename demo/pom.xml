@@ -28,6 +28,7 @@
 		<module>ApiGateway</module>
 		<module>AI-Service</module>
         <module>Account-Service</module>
+        <module>Eureka-Service</module>
     </modules>
 	<scm>
 		<connection/>

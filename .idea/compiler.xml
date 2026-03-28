@@ -8,6 +8,7 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="Account-Service" />
+        <module name="Eureka-Service" />
         <module name="Notification-Service" />
         <module name="Transaction-Service" />
         <module name="AI-Service" />
@@ -21,6 +22,7 @@
       <module name="AI-Service" options="-parameters" />
       <module name="Account-Service" options="-parameters" />
       <module name="ApiGateway" options="-parameters" />
+      <module name="Eureka-Service" options="-parameters" />
       <module name="Notification-Service" options="-parameters" />
       <module name="Transaction-Service" options="-parameters" />
       <module name="User-Service" options="-parameters" />
