@@ -70,6 +70,7 @@ public class WebSecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/users/register", "/api/users/login",
                                 "/api/users/send-code", "/api/users/verify-account").permitAll()
+                        .requestMatchers("/api/users/internal/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2

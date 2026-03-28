@@ -1,4 +1,4 @@
-package com.example.Client.Dto;
+package com.example.Model.Dto.Response;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,5 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class AccountEligibilityResponse {
+public class Response {
+    private String responseMessage;
+    private String responseCode;
 }

@@ -17,6 +17,7 @@ import com.example.Model.Dto.Request.ReleaseHoldRequest;
 import com.example.Model.Dto.Request.UnfreezeAccountRequest;
 import com.example.Model.Dto.Response.AccountBalanceResponse;
 import com.example.Model.Dto.Response.AccountHoldResponse;
+import com.example.Model.Dto.Response.AccountOwnerInternalResponse;
 import com.example.Model.Dto.Response.AccountResponse;
 import com.example.Model.Dto.Response.ApiResponse;
 import com.example.Model.Dto.Response.LedgerEntryResponse;
@@ -41,7 +42,6 @@ import com.example.Repository.LedgerEntryRepository;
 import com.example.Repository.LedgerJournalRepository;
 import com.example.Service.AccountService;
 import lombok.RequiredArgsConstructor;
-import org.hibernate.Transaction;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
@@ -54,8 +54,12 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.TreeSet;
 import java.util.UUID;
 
 @Service
@@ -120,6 +124,18 @@ public class AccountServiceImpl implements AccountService {
     @Transactional(readOnly = true)
     public AccountResponse getAccountById(Long accountId) {
         return toAccountResponse(getAccount(accountId));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AccountOwnerInternalResponse getAccountOwnerInternal(Long accountId) {
+        Account account = getAccount(accountId);
+        return AccountOwnerInternalResponse.builder()
+                .accountId(account.getAccountId())
+                .userId(account.getUserId())
+                .accountNumber(account.getAccountNumber())
+                .currency(account.getCurrency())
+                .build();
     }
 
     @Override
@@ -282,9 +298,20 @@ public class AccountServiceImpl implements AccountService {
                 .build();
         ledgerJournalRepository.save(journal);
 
+        TreeSet<Long> accountIds = new TreeSet<>(Comparator.naturalOrder());
+        for (LedgerLineRequest line : request.getEntries()) {
+            accountIds.add(line.getAccountId());
+        }
+        Map<Long, Account> lockedAccounts = new LinkedHashMap<>();
+        for (Long accountId : accountIds) {
+            Account locked = accountRepository.findByIdForUpdate(accountId)
+                    .orElseThrow(() -> new IllegalArgumentException("Account not found"));
+            lockedAccounts.put(accountId, locked);
+        }
+
         List<LedgerEntry> persistedEntries = new ArrayList<>();
         for (LedgerLineRequest line : request.getEntries()) {
-            Account account = getAccount(line.getAccountId());
+            Account account = lockedAccounts.get(line.getAccountId());
             ensureAccountCanPost(account, line.getEntryType());
 
             BigDecimal amount = normalizedMoney(line.getAmount());

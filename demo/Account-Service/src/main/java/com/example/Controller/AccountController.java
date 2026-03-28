@@ -9,6 +9,7 @@ import com.example.Model.Dto.Request.ReleaseHoldRequest;
 import com.example.Model.Dto.Request.UnfreezeAccountRequest;
 import com.example.Model.Dto.Response.AccountBalanceResponse;
 import com.example.Model.Dto.Response.AccountHoldResponse;
+import com.example.Model.Dto.Response.AccountOwnerInternalResponse;
 import com.example.Model.Dto.Response.AccountResponse;
 import com.example.Model.Dto.Response.ApiResponse;
 import com.example.Model.Dto.Response.LedgerEntryResponse;
@@ -39,6 +40,11 @@ public class AccountController {
     @GetMapping("/{accountId}")
     public ResponseEntity<AccountResponse> getAccountById(@PathVariable Long accountId) {
         return ResponseEntity.ok(accountService.getAccountById(accountId));
+    }
+
+    @GetMapping("/internal/{accountId}/owner")
+    public ResponseEntity<AccountOwnerInternalResponse> getAccountOwnerInternal(@PathVariable Long accountId) {
+        return ResponseEntity.ok(accountService.getAccountOwnerInternal(accountId));
     }
 
     @GetMapping("/number/{accountNumber}")

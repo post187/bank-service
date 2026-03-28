@@ -259,4 +259,21 @@ public class UserServiceImpl implements UserService {
                 .reason(reason)
                 .build();
     }
+
+    @Override
+    public String getEmailByUserIdInternal(Long userId) {
+        return userRepository.findById(userId)
+                .map(User::getEmail)
+                .orElse(null);
+    }
+
+    @Override
+    public Long getUserIdByEmailInternal(String email) {
+        if (email == null || email.isBlank()) {
+            return null;
+        }
+        return userRepository.findByEmail(email.trim())
+                .map(User::getUserId)
+                .orElse(null);
+    }
 }

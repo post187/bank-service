@@ -1,6 +1,12 @@
 package com.example.Model.Document;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,6 +27,11 @@ public class Email {
 
     private String notificationId;
 
+    private Long userId;
+
+    private String sourceTopic;
+    private String sourceService;
+
     private String recipient;
     private String subject;
 
@@ -34,4 +45,11 @@ public class Email {
 
     private LocalDateTime sentAt;
     private LocalDateTime createdAt;
+
+    @PrePersist
+    public void prePersist() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+    }
 }

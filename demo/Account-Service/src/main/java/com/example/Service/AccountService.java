@@ -5,6 +5,7 @@ import com.example.Model.Dto.Request.CreateAccountRequest;
 import com.example.Model.Dto.Request.FreezeAccountRequest;
 import com.example.Model.Dto.Request.UnfreezeAccountRequest;
 import com.example.Model.Dto.Response.AccountBalanceResponse;
+import com.example.Model.Dto.Response.AccountOwnerInternalResponse;
 import com.example.Model.Dto.Response.AccountResponse;
 import com.example.Model.Dto.Response.ApiResponse;
 import com.example.Model.Dto.Response.StatusHistoryResponse;
@@ -16,6 +17,8 @@ public interface AccountService extends LedgerService, StatusHistoryService, Sna
     AccountResponse createAccount(CreateAccountRequest request);
 
     AccountResponse getAccountById(Long accountId);
+
+    AccountOwnerInternalResponse getAccountOwnerInternal(Long accountId);
 
     AccountResponse getAccountByNumber(String accountNumber);
 

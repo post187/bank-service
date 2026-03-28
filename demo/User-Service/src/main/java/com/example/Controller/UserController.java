@@ -27,6 +27,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @Slf4j
@@ -59,6 +60,24 @@ public class UserController {
     @GetMapping("/internal/{userId}/account-eligibility")
     public ResponseEntity<AccountEligibilityResponse> getAccountEligibility(@PathVariable Long userId) {
         return ResponseEntity.ok(userService.getAccountEligibility(userId));
+    }
+
+    @GetMapping("/internal/{userId}/email")
+    public ResponseEntity<Map<String, String>> getEmailForInternalServices(@PathVariable Long userId) {
+        String email = userService.getEmailByUserIdInternal(userId);
+        if (email == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(Map.of("email", email));
+    }
+
+    @GetMapping("/internal/by-email")
+    public ResponseEntity<Map<String, Long>> getUserIdByEmailInternal(@RequestParam("email") String email) {
+        Long userId = userService.getUserIdByEmailInternal(email);
+        if (userId == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(Map.of("userId", userId));
     }
 
     @PutMapping("/change-contact")
