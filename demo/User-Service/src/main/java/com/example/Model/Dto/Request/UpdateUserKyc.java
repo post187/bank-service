@@ -1,6 +1,6 @@
 package com.example.Model.Dto.Request;
 
-import com.example.Model.Dto.Internal.Status.DocumentType;
+import com.example.Model.Dto.Internal.StatusUserService.DocumentType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

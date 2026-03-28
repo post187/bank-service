@@ -9,7 +9,7 @@ import com.example.Jwt.CustomerAuthentication.CustomAuthentication;
 import com.example.Jwt.JwtProvider;
 import com.example.Jwt.UserDetail.UserPrinciple;
 import com.example.Model.Dto.Internal.*;
-import com.example.Model.Dto.Internal.Status.Status;
+import com.example.Model.Dto.Internal.StatusUserService.Status;
 import com.example.Model.Dto.Request.ChangePasswordRequest;
 import com.example.Model.Dto.Request.LoginRequest;
 import com.example.Model.Dto.Request.ResetPasswordRequest;
@@ -18,7 +18,6 @@ import com.example.Model.Dto.Response.JwtResponse;
 import com.example.Model.Dto.Response.Response;
 import com.example.Model.Dto.Response.UserDto;
 import com.example.Model.Entity.User;
-import com.example.Model.Entity.UserProfile;
 import com.example.Model.Entity.VerificationToken;
 import com.example.Model.External.Account;
 import com.example.Model.Mapper.UserMapper;
@@ -31,13 +30,8 @@ import com.example.Utils.FieldChecked;
 import jakarta.ws.rs.BadRequestException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -56,7 +50,6 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 import static com.example.Constant.AppConstant.MAX_LOGIN_ATTEMPT;
-import static com.example.Constant.AppConstant.NUMBER_OF_PAGE;
 
 @Slf4j
 @Service
@@ -65,7 +58,7 @@ public class UserAuthServiceImpl implements UserAuth {
     private final UserRepository userRepository;
     private final StringRedisTemplate redis;
     private final VerificationTokenRepository verificationTokenRepository;
-    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
     private final JwtProvider jwtProvider;
     private final DeviceService deviceService;
     private final SessionService sessionService;
@@ -109,7 +102,7 @@ public class UserAuthServiceImpl implements UserAuth {
     }
 
     @Override
-    public Response createUser(CreateUser userDto) {
+    public Response createUser(UserCreate userDto) {
         if (userRepository.existsByEmail(userDto.getEmail())) {
             throw new ResourceConflictException("Email used on the servers");
         }

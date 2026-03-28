@@ -1,6 +1,6 @@
 package com.example.Repository;
 
-import com.example.Model.Dto.Internal.Status.KycStatus;
+import com.example.Model.Dto.Internal.StatusUserService.KycStatus;
 import com.example.Model.Entity.UserKycDocument;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

@@ -1,7 +1,7 @@
 package com.example.Model.Dto.Response;
 
-import com.example.Model.Dto.Internal.Status.DocumentType;
-import com.example.Model.Dto.Internal.Status.KycStatus;
+import com.example.Model.Dto.Internal.StatusUserService.DocumentType;
+import com.example.Model.Dto.Internal.StatusUserService.KycStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

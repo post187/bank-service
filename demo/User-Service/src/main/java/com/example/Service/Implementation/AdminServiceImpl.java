@@ -2,8 +2,8 @@ package com.example.Service.Implementation;
 
 import com.example.Exception.EmptyFields;
 import com.example.Exception.ResourceNotFoundException;
-import com.example.Model.Dto.Internal.Status.KycStatus;
-import com.example.Model.Dto.Internal.Status.Status;
+import com.example.Model.Dto.Internal.StatusUserService.KycStatus;
+import com.example.Model.Dto.Internal.StatusUserService.Status;
 import com.example.Model.Dto.Internal.UpdateStatus;
 import com.example.Model.Dto.Internal.UpdateUserProfile;
 import com.example.Model.Dto.Response.DeviceDto;

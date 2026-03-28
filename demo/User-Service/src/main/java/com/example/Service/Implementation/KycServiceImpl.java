@@ -5,7 +5,7 @@ import com.example.Jwt.CustomerAuthentication.CustomAuthentication;
 import com.example.Jwt.UserDetail.UserPrinciple;
 import com.example.Model.Dto.External.KycAiCheckEvent;
 import com.example.Model.Dto.External.KycAiResultEvent;
-import com.example.Model.Dto.Internal.Status.KycStatus;
+import com.example.Model.Dto.Internal.StatusUserService.KycStatus;
 import com.example.Model.Dto.Request.UpdateUserKyc;
 import com.example.Model.Dto.Response.Response;
 import com.example.Model.Dto.Response.UserKycDtoUser;
@@ -17,6 +17,7 @@ import com.example.Repository.UserRepository;
 import com.example.Service.KycService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Primary;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -30,6 +31,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Primary
 public class KycServiceImpl implements KycService {
     private final UserKycRepository userKycRepository;
     private final UserRepository userRepository;

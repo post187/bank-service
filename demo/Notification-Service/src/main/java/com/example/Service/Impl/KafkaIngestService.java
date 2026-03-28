@@ -40,7 +40,8 @@ public class KafkaIngestService {
     public void onRegistration(String email, String token) {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("token", token);
-        persistAndMaybeEmail(
+        // Chỉ gửi email — không tạo thông báo in-app (tránh lộ token/OTP trong hộp thông báo).
+        sendEmailOnlyWithoutInAppNotification(
                 null,
                 email,
                 "Xác thực đăng ký",
@@ -49,8 +50,6 @@ public class KafkaIngestService {
                 "USER_SERVICE",
                 KafkaTopics.REGISTRATION,
                 email,
-                payload,
-                true,
                 "Verify your account"
         );
     }
@@ -61,8 +60,8 @@ public class KafkaIngestService {
         String body = looksLikeOtp
                 ? "Mã OTP đặt lại mật khẩu: " + secretPayload + " (có hiệu lực trong thời gian quy định)."
                 : "Mật khẩu mới sau khi đặt lại: " + secretPayload + ". Vui lòng đăng nhập và đổi mật khẩu ngay.";
-        Map<String, Object> payload = Map.of("type", looksLikeOtp ? "OTP" : "NEW_PASSWORD");
-        persistAndMaybeEmail(
+        // Chỉ gửi email — không tạo thông báo in-app.
+        sendEmailOnlyWithoutInAppNotification(
                 null,
                 email,
                 title,
@@ -71,16 +70,14 @@ public class KafkaIngestService {
                 "USER_SERVICE",
                 KafkaTopics.RESET_PASSWORD,
                 email,
-                payload,
-                true,
                 looksLikeOtp ? "Password reset OTP" : "Your new password"
         );
     }
 
     public void onKycUserMessage(String email, String message) {
         Map<String, Object> payload = Map.of("raw", message);
-        persistAndMaybeEmail(
-                null,
+        persistInAppNotificationAndMaybeEmail(
+                resolveUserIdByEmail(email),
                 email,
                 "Thông báo KYC",
                 message,
@@ -96,8 +93,8 @@ public class KafkaIngestService {
 
     public void onAbleUser(String email, String message) {
         Map<String, Object> payload = Map.of("raw", message);
-        persistAndMaybeEmail(
-                null,
+        persistInAppNotificationAndMaybeEmail(
+                resolveUserIdByEmail(email),
                 email,
                 "Trạng thái tài khoản",
                 message,
@@ -123,7 +120,7 @@ public class KafkaIngestService {
                     otp, deviceName
             );
             Map<String, Object> payload = objectMapper.convertValue(root, Map.class);
-            persistAndMaybeEmail(
+            persistInAppNotificationAndMaybeEmail(
                     userId,
                     email,
                     "Xác thực thiết bị mới",
@@ -150,7 +147,7 @@ public class KafkaIngestService {
             case KafkaTopics.ACCOUNT_CLOSED -> "Tài khoản đã đóng";
             default -> "Thông báo tài khoản";
         };
-        persistAndMaybeEmail(
+        persistInAppNotificationAndMaybeEmail(
                 uid,
                 null,
                 title,
@@ -203,7 +200,7 @@ public class KafkaIngestService {
                         refType,
                         StringUtils.hasText(desc) ? desc : ""
                 );
-                persistAndMaybeEmail(
+                persistInAppNotificationAndMaybeEmail(
                         uid,
                         email,
                         "Giao dịch sổ cái",
@@ -244,7 +241,7 @@ public class KafkaIngestService {
             String email = resolveEmail(userId);
             String body = root.toString();
             Map<String, Object> payload = objectMapper.convertValue(root, Map.class);
-            persistAndMaybeEmail(
+            persistInAppNotificationAndMaybeEmail(
                     userId,
                     email,
                     title,
@@ -277,7 +274,7 @@ public class KafkaIngestService {
             );
             Map<String, Object> payload = objectMapper.convertValue(root, Map.class);
             String email = resolveEmail(initiatorUserId);
-            persistAndMaybeEmail(
+            persistInAppNotificationAndMaybeEmail(
                     initiatorUserId,
                     email,
                     "Giao dịch hoàn tất",
@@ -295,7 +292,59 @@ public class KafkaIngestService {
         }
     }
 
-    private void persistAndMaybeEmail(
+    /**
+     * Đăng ký / reset mật khẩu: chỉ gửi email + log bảng {@code emails}, không tạo bản ghi Mongo thông báo in-app.
+     */
+    private void sendEmailOnlyWithoutInAppNotification(
+            Long userId,
+            String emailDirect,
+            String title,
+            String body,
+            String category,
+            String sourceService,
+            String topic,
+            String kafkaKey,
+            String emailSubject
+    ) {
+        String email = StringUtils.hasText(emailDirect) ? emailDirect.trim() : resolveEmail(userId);
+        if (!StringUtils.hasText(email)) {
+            log.warn("Email-only flow skipped: no recipient (topic={})", topic);
+            return;
+        }
+
+        Email emailLog = Email.builder()
+                .notificationId(null)
+                .userId(userId)
+                .sourceTopic(topic)
+                .sourceService(sourceService)
+                .recipient(email)
+                .subject(StringUtils.hasText(emailSubject) ? emailSubject : title)
+                .body(body)
+                .status("SENDING")
+                .build();
+        emailLog = emailRepository.save(emailLog);
+
+        try {
+            EmailDetail detail = new EmailDetail();
+            detail.setRecipient(email);
+            detail.setSubject(emailLog.getSubject());
+            detail.setMsBody(body);
+            emailService.sendSimpleMail(detail);
+            emailLog.setStatus("SUCCESS");
+            emailLog.setSentAt(LocalDateTime.now());
+            emailRepository.save(emailLog);
+        } catch (Exception e) {
+            log.warn("Email-only send failed {}: {}", email, e.getMessage());
+            emailLog.setStatus("FAILED");
+            emailLog.setErrorMessage(e.getMessage());
+            emailRepository.save(emailLog);
+        }
+    }
+
+    /**
+     * Luồng chuẩn: lưu thông báo in-app (theo {@code userId} + email) để người dùng xem trên app; đồng thời gửi email nếu cấu hình.
+     */
+    private void persistInAppNotificationAndMaybeEmail(
             Long userId,
             String emailDirect,
             String title,
@@ -365,6 +414,19 @@ public class KafkaIngestService {
             n.setEmailDispatched(false);
             n.setEmailDeliveryStatus("FAILED");
             notificationRepository.save(n);
+        }
+    }
+
+    /** Tra cứu userId theo email để gắn thông báo in-app (KYC, khóa tài khoản, …). */
+    private Long resolveUserIdByEmail(String email) {
+        if (!StringUtils.hasText(email)) {
+            return null;
+        }
+        try {
+            return userInternalClient.getMyInfo().getUserId();
+        } catch (Exception e) {
+            log.debug("resolveUserIdByEmail {}: {}", email, e.getMessage());
+            return null;
         }
     }
 

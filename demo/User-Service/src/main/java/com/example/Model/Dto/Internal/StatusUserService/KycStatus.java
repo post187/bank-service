@@ -1,4 +1,4 @@
-package com.example.Model.Dto.Internal.Status;
+package com.example.Model.Dto.Internal.StatusUserService;
 
 public enum KycStatus {
     NOT_SUBMITTED,   // Chưa gửi thông tin KYC

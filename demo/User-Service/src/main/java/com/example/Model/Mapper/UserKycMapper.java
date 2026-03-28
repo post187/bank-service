@@ -1,6 +1,6 @@
 package com.example.Model.Mapper;
 
-import com.example.Model.Dto.Internal.Status.KycStatus;
+import com.example.Model.Dto.Internal.StatusUserService.KycStatus;
 import com.example.Model.Dto.Response.UserKycDtoAdmin;
 import com.example.Model.Dto.Response.UserKycDtoUser;
 import com.example.Model.Entity.UserKycDocument;

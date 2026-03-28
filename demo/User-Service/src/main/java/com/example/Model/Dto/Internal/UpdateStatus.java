@@ -1,6 +1,6 @@
 package com.example.Model.Dto.Internal;
 
-import com.example.Model.Dto.Internal.Status.Status;
+import com.example.Model.Dto.Internal.StatusUserService.Status;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

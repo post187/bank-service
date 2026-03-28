@@ -1,6 +1,6 @@
 package com.example.Model.Entity;
 
-import com.example.Model.Dto.Internal.Status.Status;
+import com.example.Model.Dto.Internal.StatusUserService.Status;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;

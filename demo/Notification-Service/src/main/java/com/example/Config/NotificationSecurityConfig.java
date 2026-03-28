@@ -22,7 +22,7 @@ import javax.crypto.spec.SecretKeySpec;
 @EnableMethodSecurity
 public class NotificationSecurityConfig {
 
-    @Value("${jwt.secret}")
+    @Value("${spring.jwt.secret}")
     private String jwtSecret;
 
     @Bean

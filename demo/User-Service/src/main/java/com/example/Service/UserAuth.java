@@ -1,19 +1,16 @@
 package com.example.Service;
 
 import com.example.Model.Dto.Internal.*;
-import com.example.Model.Dto.Internal.Status.KycStatus;
 import com.example.Model.Dto.Request.ChangePasswordRequest;
 import com.example.Model.Dto.Request.LoginRequest;
 import com.example.Model.Dto.Request.ResetPasswordRequest;
 import com.example.Model.Dto.Request.VerifyDeviceRequest;
 import com.example.Model.Dto.Response.*;
 
-import java.util.List;
-
 public interface UserAuth {
 
     //auth
-    Response createUser(CreateUser userDto);
+    Response createUser(UserCreate userDto);
 
     JwtResponse login(LoginRequest request);
 

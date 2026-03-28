@@ -1,7 +1,7 @@
 package com.example.Controller;
 
-import com.example.Model.Dto.Internal.CreateUser;
-import com.example.Model.Dto.Internal.Status.KycStatus;
+import com.example.Model.Dto.Internal.UserCreate;
+import com.example.Model.Dto.Internal.StatusUserService.KycStatus;
 import com.example.Model.Dto.Internal.UpdateStatus;
 import com.example.Model.Dto.Internal.UpdateUserProfile;
 import com.example.Model.Dto.Request.ChangePasswordRequest;
@@ -37,7 +37,7 @@ public class UserController {
     private final UserService userService;
 
     @PostMapping("/register")
-    public ResponseEntity<Response> createUser(@RequestBody CreateUser userDto) {
+    public ResponseEntity<Response> createUser(@RequestBody UserCreate userDto) {
         log.info("Creating user with: {}", userDto.toString());
         return ResponseEntity.ok(userService.createUser(userDto));
     }

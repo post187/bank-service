@@ -23,7 +23,7 @@ public class UserDetailService implements UserDetailsService{
 
     @Transactional
     public UserDetails loadUserByPhone(String phone) {
-        User user = userRepository.findUserByAuthId(phone)
+        User user = userRepository.findUserByContactNo(phone)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found, phone and password: " + phone));
 
         return UserPrinciple.build(user);
